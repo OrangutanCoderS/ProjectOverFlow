@@ -1,12 +1,12 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use system::{SystemCfg, SystemMonitor};
+use system::{SysStatsCfg, SystemStatsMonitor};
 
 fn bench_capture(c: &mut Criterion) {
-    let mut mon = SystemMonitor::new(SystemCfg::default()).unwrap();
+    let mut mon = SystemStatsMonitor::new(SysStatsCfg::default()).unwrap();
 
-    c.bench_function("system_capture", |b| {
+    c.bench_function("system_stats_capture", |b| {
         b.iter(|| {
-            let _ = mon.capture().unwrap();
+            let _ = mon.snapshot().unwrap();
         })
     });
 }

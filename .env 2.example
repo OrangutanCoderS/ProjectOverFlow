@@ -1,0 +1,12 @@
+# Example local configuration for OverFlow (DO NOT COMMIT REAL SECRETS)
+# Copy to .env and fill in real values locally (kept untracked by .gitignore)
+
+# IPC token used by the daemon; overrides TOML auth_token at runtime.
+OVERFLOW_IPC_TOKEN=replace_me_locally
+
+# Optional logging controls (match your code’s env overrides if used)
+OVERFLOW_LOG_LEVEL=info
+OVERFLOW_LOG_STDOUT=1
+
+# Optional: override IPC bind path if needed
+# OVERFLOW_IPC_BIND=/tmp/overflow.sock

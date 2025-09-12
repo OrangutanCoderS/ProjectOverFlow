@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+
+echo "🔍 Running pre-commit checks..."
+
+# 1. Ensure code is formatted
+cargo fmt --all -- --check
+
+# 2. Lint with clippy (fail on warnings)
+cargo clippy --all-targets --all-features -- -D warnings
+
+# 3. Run tests
+cargo test --all --quiet
+
+echo "✅ All checks passed!"

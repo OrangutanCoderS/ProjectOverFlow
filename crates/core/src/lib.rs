@@ -29,8 +29,8 @@ pub enum EventType {
     Network,
     PluginTrigger,
     SecureModeState,
-    // NEW: system metrics snapshot
     SystemStats,
+    Cpu, // Added for CPU event
 }
 
 /// Minimal common header every event carries.
@@ -174,7 +174,7 @@ impl Event for NetworkEvent {
 
 bitflags::bitflags! {
     /// Optional flags about the trigger context.
-    #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+    #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
     pub struct TriggerFlags: u32 {
         const THRESHOLD_EXCEEDED = 0b0001;
         const HEURISTIC_MATCH    = 0b0010;
@@ -232,29 +232,21 @@ impl Event for SecureModeState {
 }
 
 /* =======================
-   System Stats Snapshot (NEW)
+   System Stats Snapshot
    ======================= */
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SystemStatSnapshot {
     #[serde(flatten)]
     pub base: BaseEvent,
-
-    // percentages are per global CPU (0..=100 on sysinfo global; >100 on per-core sums but we use global)
     pub cpu_pct: f32,
-
-    // memory/swap in MiB
     pub mem_total_mb: f32,
     pub mem_used_mb: f32,
     pub swap_total_mb: f32,
     pub swap_used_mb: f32,
-
-    // UNIX load averages
     pub load1: f32,
     pub load5: f32,
     pub load15: f32,
-
-    // uptime in seconds and total process count (from provider)
     pub uptime_s: i64,
     pub process_count: u32,
 }
@@ -269,9 +261,6 @@ impl Event for SystemStatSnapshot {
         if self.mem_used_mb < 0.0 || self.swap_used_mb < 0.0 {
             return Err(ModelError::Invalid("mem_used_mb/swap_used_mb must be >= 0".into()));
         }
-        if self.mem_total_mb < self.mem_used_mb + 0.0 {
-            // tolerate minor float noise; comparison already permissive
-        }
         if self.load1 < 0.0 || self.load5 < 0.0 || self.load15 < 0.0 {
             return Err(ModelError::Invalid("load averages must be >= 0".into()));
         }
@@ -283,7 +272,35 @@ impl Event for SystemStatSnapshot {
 }
 
 /* =======================
-   Generic wrapper for logging/telemetry
+   CPU Event
+   ======================= */
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CpuEvent {
+    #[serde(flatten)]
+    pub base: BaseEvent,
+    pub global_usage: f32,
+    pub per_core: Vec<f32>,
+}
+
+impl Event for CpuEvent {
+    fn kind(&self) -> EventType { EventType::Cpu }
+    fn base(&self) -> &BaseEvent { &self.base }
+    fn validate(&self) -> Result<(), ModelError> {
+        if !(0.0..=100.0).contains(&self.global_usage) {
+            return Err(ModelError::Invalid("global_usage must be 0.0–100.0".into()));
+        }
+        for (i, &val) in self.per_core.iter().enumerate() {
+            if !(0.0..=100.0).contains(&val) {
+                return Err(ModelError::Invalid(format!("per_core[{i}] must be 0.0–100.0")));
+            }
+        }
+        Ok(())
+    }
+}
+
+/* =======================
+   Generic wrapper
    ======================= */
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -294,8 +311,8 @@ pub enum AnyEvent {
     Network(NetworkEvent),
     PluginTrigger(PluginTrigger),
     SecureModeState(SecureModeState),
-    // NEW:
     SystemStats(SystemStatSnapshot),
+    Cpu(CpuEvent),
 }
 
 impl AnyEvent {
@@ -307,6 +324,7 @@ impl AnyEvent {
             AnyEvent::PluginTrigger(e) => e.validate(),
             AnyEvent::SecureModeState(e) => e.validate(),
             AnyEvent::SystemStats(e) => e.validate(),
+            AnyEvent::Cpu(e) => e.validate(),
         }
     }
 
