@@ -1,0 +1,20 @@
+[package]
+name = "process"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+thiserror = "1"
+tracing = "0.1"
+sysinfo = { version = "0.30", features = ["multithread"] }
+once_cell = "1"
+hashbrown = "0.15"
+serde = { version = "1", features = ["derive"] }
+chrono = "0.4"
+
+overflow-core = { path = "../core" }
+overflow-utils = { path = "../utils" }
+
+[dev-dependencies]
+serial_test = "3"
+tempfile = "3"

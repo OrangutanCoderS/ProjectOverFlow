@@ -1,0 +1,25 @@
+[package]
+name = "overflow-utils"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "overflow_utils"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+
+# libc only on Unix for fsync
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+criterion = "0.5"
+tempfile = "3"
+
+[[bench]]
+name = "utils_perf"
+harness = false

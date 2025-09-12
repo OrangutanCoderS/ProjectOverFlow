@@ -1,0 +1,27 @@
+# ---- Rust/Build ----
+/target/
+**/*.rs.bk
+
+# ---- Editors/OS ----
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ---- Logs & Artifacts ----
+logs/
+*.log
+*.tmp
+*.bak
+
+# ---- Local env & overrides (do NOT commit real secrets) ----
+.env
+.env.*
+!/.env.example
+configs/*.local.toml
+
+# ---- Test runs ----
+/coverage/
+criterion/
+.env

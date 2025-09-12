@@ -1,0 +1,30 @@
+[package]
+name = "daemon"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "daemon"
+path = "src/lib.rs"
+
+[[bin]]
+name = "overflowd"
+path = "src/main.rs"
+
+[dependencies]
+thiserror = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
+parking_lot = "0.12"
+once_cell = "1"
+ctrlc = "3"
+config = { path = "../config" }
+
+[dev-dependencies]
+criterion = "0.5"
+tempfile = "3"
+
+[features]
+default = ["noop"]
+noop = []
+

@@ -1,0 +1,11 @@
+[logging]
+level = "info"
+stdout = true
+
+[scheduler]
+tick_ms = 100
+watchdog_ms = 500
+
+[ipc]
+bind = "/tmp/overflow.sock"
+auth_token = "${AUTH_TOKEN}"
