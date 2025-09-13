@@ -1,13 +1,7 @@
-use overflow_utils::{
-    bytes_human,
-    file_entropy_limited,
-    run_cmd,
-    unix_time_ms,
-    utc_iso8601,
-};
-use std::time::Duration;
+use overflow_utils::{bytes_human, file_entropy_limited, run_cmd, unix_time_ms, utc_iso8601};
 use std::fs;
 use std::path::PathBuf;
+use std::time::Duration;
 
 #[test]
 fn bytes_format_is_sane() {

@@ -185,9 +185,9 @@ pub fn sanitize_path_under(base_dir: &Path, target: &Path) -> io::Result<PathBuf
 /// - permissions: 0o600 (unix) / normal file (windows)
 pub fn write_json_atomic<P: AsRef<Path>, T: Serialize>(dest: P, value: &T) -> io::Result<()> {
     let dest = dest.as_ref();
-    let parent = dest.parent().ok_or_else(|| {
-        io::Error::new(io::ErrorKind::InvalidInput, "no parent directory")
-    })?;
+    let parent = dest
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "no parent directory"))?;
     fs::create_dir_all(parent)?;
 
     let tmp_name = format!(

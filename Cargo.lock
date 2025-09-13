@@ -39,6 +39,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "862ed96ca487e809f1c8e5a8447f6ee2cf102f846893800b20cebdf541fc6bbd"
 
 [[package]]
+name = "anyhow"
+version = "1.0.99"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0674a1ddeecb70197781e945de4b3b8ffb61fa939a5597bcf48503737663100"
+
+[[package]]
 name = "autocfg"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -105,6 +111,7 @@ dependencies = [
  "iana-time-zone",
  "js-sys",
  "num-traits",
+ "serde",
  "wasm-bindgen",
  "windows-link 0.2.0",
 ]
@@ -162,6 +169,37 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b94f61472cee1439c0b966b47e3aca9ae07e45d070759512cd390ea2bebc6675"
 
 [[package]]
+name = "clipboard"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "criterion",
+ "once_cell",
+ "overflow-utils",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
+name = "cloudsync"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "criterion",
+ "once_cell",
+ "overflow-utils",
+ "pretty_assertions",
+ "regex",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "config"
 version = "0.1.0"
 dependencies = [
@@ -192,6 +230,22 @@ dependencies = [
 [[package]]
 name = "crash"
 version = "0.1.0"
+
+[[package]]
+name = "crashdet"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "criterion",
+ "once_cell",
+ "overflow-utils",
+ "pretty_assertions",
+ "regex",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+]
 
 [[package]]
 name = "criterion"
@@ -310,6 +364,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "diff"
+version = "0.1.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56254986775e3233ffa9c4d7d3faaf6d36a2c09d30b20687e9f88bc8bafc16c8"
+
+[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -356,6 +416,15 @@ checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
 [[package]]
 name = "filemon"
 version = "0.1.0"
+dependencies = [
+ "criterion",
+ "overflow-core",
+ "regex",
+ "tempfile",
+ "thiserror",
+ "tracing",
+ "walkdir",
+]
 
 [[package]]
 name = "find-msvc-tools"
@@ -631,6 +700,17 @@ checksum = "32a282da65faaf38286cf3be983213fcf1d2e2a58700e808f83f4ea9a4804bc0"
 [[package]]
 name = "netmon"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "criterion",
+ "once_cell",
+ "overflow-utils",
+ "pretty_assertions",
+ "regex",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
 
 [[package]]
 name = "nix"
@@ -734,6 +814,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "periphmon"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "criterion",
+ "once_cell",
+ "overflow-utils",
+ "pretty_assertions",
+ "regex",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "pin-project-lite"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -776,6 +871,16 @@ dependencies = [
 [[package]]
 name = "plugins"
 version = "0.1.0"
+
+[[package]]
+name = "pretty_assertions"
+version = "1.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ae130e2f271fbc2ac3a40fb1d07180839cdbbe443c7a27e1e3c13c5cac0116d"
+dependencies = [
+ "diff",
+ "yansi",
+]
 
 [[package]]
 name = "proc-macro2"
@@ -911,6 +1016,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "sandbox"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "criterion",
+ "once_cell",
+ "overflow-utils",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "scc"
 version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -930,6 +1050,36 @@ name = "sdd"
 version = "3.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "490dcfcbfef26be6800d11870ff2df8774fa6e86d047e3e8c8a76b25655e41ca"
+
+[[package]]
+name = "securemode"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "criterion",
+ "once_cell",
+ "overflow-utils",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "sensorlog"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "criterion",
+ "once_cell",
+ "overflow-utils",
+ "pretty_assertions",
+ "regex",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
 
 [[package]]
 name = "sensors"
@@ -1097,6 +1247,7 @@ dependencies = [
  "criterion",
  "overflow-core",
  "overflow-utils",
+ "regex",
  "serde",
  "serde_json",
  "serial_test 2.0.0",
@@ -1612,3 +1763,9 @@ name = "wit-bindgen"
 version = "0.45.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c573471f125075647d03df72e026074b7203790d41351cd6edc96f46bcccd36"
+
+[[package]]
+name = "yansi"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfe53a6657fd280eaa890a3bc59152892ffa3e30101319d168b781ed6529b049"

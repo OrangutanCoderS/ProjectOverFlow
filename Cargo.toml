@@ -12,7 +12,14 @@ members = [
     "crates/process",
     "crates/sensors",
     "crates/system",
-    "crates/utils"
+    "crates/utils",
+    "crates/clipboard",
+    "crates/sensorlog",
+    "crates/crashdet",
+     "crates/cloudsync",
+     "crates/periphmon",
+      "crates/securemode",
+       "crates/sandbox",
 ]
 resolver = "2"
 [workspace.package]

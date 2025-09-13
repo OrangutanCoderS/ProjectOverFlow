@@ -61,7 +61,8 @@ impl CpuTracker {
         };
 
         // Validate model for safety
-        evt.validate().map_err(|e| CpuError::Snapshot(e.to_string()))?;
+        evt.validate()
+            .map_err(|e| CpuError::Snapshot(e.to_string()))?;
 
         let elapsed = t0.elapsed().as_millis() as u64;
         if elapsed > self.cfg.soft_budget_ms {

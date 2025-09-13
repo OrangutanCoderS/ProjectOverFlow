@@ -1,8 +1,8 @@
 //! System Stats Tests (Phase I)
 //! Ensures the system stats monitor works consistently across platforms.
 
-use system::{SystemStatsMonitor, SysStatsCfg};
 use overflow_core::{AnyEvent, Event};
+use system::{SysStatsCfg, SystemStatsMonitor};
 
 #[test]
 fn snapshot_succeeds_and_values_reasonable() {

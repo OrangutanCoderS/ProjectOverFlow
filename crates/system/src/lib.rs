@@ -1,7 +1,7 @@
 //! Module 6 — System Stats (Phase I)
 //! Captures CPU %, memory/swap, load averages, uptime, process count and emits a unified event.
 
-use overflow_core::{AnyEvent, BaseEvent, SystemStatSnapshot, Event};
+use overflow_core::{AnyEvent, BaseEvent, Event, SystemStatSnapshot};
 use sysinfo::{CpuRefreshKind, MemoryRefreshKind, ProcessRefreshKind, RefreshKind, System};
 use thiserror::Error;
 use tracing::{debug, warn};
@@ -100,7 +100,10 @@ impl SystemStatsMonitor {
 
         let elapsed = t0.elapsed().as_millis() as u64;
         if self.cfg.soft_budget_ms > 0 && elapsed > self.cfg.soft_budget_ms {
-            warn!(elapsed_ms = elapsed, "system stats sample exceeded soft budget");
+            warn!(
+                elapsed_ms = elapsed,
+                "system stats sample exceeded soft budget"
+            );
         } else {
             debug!(elapsed_ms = elapsed, "system stats sample ok");
         }
@@ -139,3 +142,13 @@ mod tests {
     }
 }
 pub mod cpu_tracker;
+
+pub mod memory_monitor;
+
+pub mod gpu_tracker;
+
+pub mod battery_monitor;
+
+pub use battery_monitor::{BatteryCfg, BatteryError, BatteryMonitor};
+
+pub mod thermal_logger;

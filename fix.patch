@@ -1,0 +1,57 @@
+diff --git a/crates/utils/src/lib.rs b/crates/utils/src/lib.rs
+index abc123..def456 100644
+--- a/crates/utils/src/lib.rs
++++ b/crates/utils/src/lib.rs
+@@ -14,7 +14,7 @@
+-/// --- Time helpers ---
+-
++/// --- Time helpers ---
+ /// Returns current UTC as ISO-8601 string (`YYYY-MM-DDTHH:MM:SS.mmmZ`)
+ pub fn utc_iso8601() -> String {
+     use chrono::Utc;
+@@ -28,7 +28,7 @@
+-/// --- Size/bytes helpers ---
+-
++/// --- Size/bytes helpers ---
+ /// Formats bytes using 1024 base (KiB/MiB/GiB), e.g. `10.5 MiB`
+ pub fn fmt_bytes_iec(bytes: u64) -> String {
+     let kib = 1024.0;
+@@ -52,7 +52,7 @@
+-/// --- Safe subprocess execution ---
+-
++/// --- Safe subprocess execution ---
+ /// Captures stdout/stderr with timeout, returns exit status & text.
+ #[derive(Debug)]
+ pub struct ProcOutput {
+@@ -126,7 +126,7 @@
+-/// --- Entropy (Shannon) ---
+-
++/// --- Entropy (Shannon) ---
+ /// Shannon entropy (bits/byte) for a byte slice (0.0..=8.0)
+ pub fn shannon_entropy(data: &[u8]) -> f64 {
+     let mut counts = [0usize; 256];
+@@ -160,7 +160,7 @@
+-/// --- Atomic JSON writer with path safety ---
+-
++/// --- Atomic JSON writer with path safety ---
+ /// Ensures `target` is inside `base_dir` (canonical path check).
+ pub fn sanitize_path_under(base_dir: &Path, target: &Path) -> io::Result<PathBuf> {
+     let base = base_dir.canonicalize()?;
+@@ -245,7 +245,7 @@
+-/// --- Small helpers ---
+-
++/// --- Small helpers ---
+ /// Guard for simple positive integer checks (defensive programming).
+ pub fn ensure_positive_i32(v: i32, name: &str) -> Result<(), String> {
+     if v <= 0 {
+diff --git a/crates/core/src/lib.rs b/crates/core/src/lib.rs
+index 123abc..456def 100644
+--- a/crates/core/src/lib.rs
++++ b/crates/core/src/lib.rs
+@@ impl Event for ProcessInfo {
+-        if !self.user.chars().all(|c| c.is_ascii()) {
+-            return Err(ModelError::Invalid("user must be ASCII".into()));
+-        }
++        if !self.user.is_ascii() {
++            return Err(ModelError::Invalid("user must be ASCII".into()));
++        }

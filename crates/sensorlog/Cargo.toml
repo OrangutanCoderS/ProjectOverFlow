@@ -1,0 +1,32 @@
+[package]
+name = "sensorlog"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[lib]
+name = "sensorlog"
+path = "src/lib.rs"
+
+[features]
+# optional bridge to core AnyEvent (kept off to avoid ripple)
+with-core = []
+
+[dependencies]
+anyhow = "1.0"
+thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+once_cell = "1.19"
+regex = "1.11"
+
+# Your hardened helpers (timeouts, utc timestamps)
+overflow-utils = { path = "../utils" }
+
+[dev-dependencies]
+criterion = "0.5"
+pretty_assertions = "1.4"
+
+[[bench]]
+name = "sensorlog_parse_bench"
+harness = false

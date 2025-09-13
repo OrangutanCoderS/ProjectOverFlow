@@ -1,6 +1,6 @@
 use config::{load_from_path, load_from_str, validate};
-use tempfile::TempDir;
 use std::fs;
+use tempfile::TempDir;
 
 fn sample_ok() -> String {
     r#"
@@ -98,7 +98,10 @@ fn load_from_path_and_env_overrides() {
     let cfg = load_from_path(&p).expect("load path");
     assert_eq!(cfg.logging.level, "debug");
     assert_eq!(cfg.ipc.auth_token, "token123");
-    assert_eq!(cfg.plugins.directories, vec!["p1".to_string(), "p2".to_string()]);
+    assert_eq!(
+        cfg.plugins.directories,
+        vec!["p1".to_string(), "p2".to_string()]
+    );
 }
 
 #[test]

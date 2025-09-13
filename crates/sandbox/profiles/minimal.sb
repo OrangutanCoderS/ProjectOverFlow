@@ -1,0 +1,6 @@
+(version 1)
+(deny default)
+(allow process*)
+(allow file-read* (subpath "/tmp/overflow_sandbox"))
+(allow file-write* (subpath "/tmp/overflow_sandbox"))
+(allow sysctl-read)

@@ -15,7 +15,7 @@ use tracing::{error, info};
 use tracing_subscriber::{fmt, EnvFilter};
 
 // Import config module (Module 2)
-use config::{EngineConfig, load_from_path};
+use config::{load_from_path, EngineConfig};
 
 static LOGGER_INIT: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
 
@@ -48,9 +48,15 @@ struct NoopSubsystem(&'static str);
 
 #[cfg(feature = "noop")]
 impl Subsystem for NoopSubsystem {
-    fn name(&self) -> &'static str { self.0 }
-    fn start(&self, _cfg: &EngineConfig) -> Result<()> { Ok(()) }
-    fn stop(&self) -> Result<()> { Ok(()) }
+    fn name(&self) -> &'static str {
+        self.0
+    }
+    fn start(&self, _cfg: &EngineConfig) -> Result<()> {
+        Ok(())
+    }
+    fn stop(&self) -> Result<()> {
+        Ok(())
+    }
 }
 
 /// Deterministic start/stop ordering for all subsystems
@@ -59,7 +65,11 @@ pub struct Supervisor {
 }
 
 impl Supervisor {
-    pub fn new() -> Self { Self { ordered: Vec::new() } }
+    pub fn new() -> Self {
+        Self {
+            ordered: Vec::new(),
+        }
+    }
 
     pub fn push<S: Subsystem + 'static>(mut self, s: S) -> Self {
         self.ordered.push(Arc::new(s));
@@ -97,8 +107,8 @@ pub struct Daemon {
 impl Daemon {
     pub fn new_from_file<P: AsRef<Path>>(p: P) -> Result<Self> {
         init_tracing_default();
-        let cfg: EngineConfig = load_from_path(p)
-            .map_err(|e| BootstrapError::ConfigParse(e.to_string()))?;
+        let cfg: EngineConfig =
+            load_from_path(p).map_err(|e| BootstrapError::ConfigParse(e.to_string()))?;
         let sup = build_supervisor();
         Ok(Self { cfg, sup })
     }
@@ -129,7 +139,9 @@ impl Daemon {
             .map_err(|e| BootstrapError::Signal(e.to_string()))?;
         }
 
-        let _ = rx.recv().map_err(|e| BootstrapError::Signal(e.to_string()))?;
+        let _ = rx
+            .recv()
+            .map_err(|e| BootstrapError::Signal(e.to_string()))?;
         info!(target: "bootstrap", "shutdown signal received");
         self.sup.stop_all()
     }
@@ -139,14 +151,22 @@ impl Daemon {
         self.sup.stop_all()
     }
 
-    pub fn config(&self) -> &EngineConfig { &self.cfg }
+    pub fn config(&self) -> &EngineConfig {
+        &self.cfg
+    }
 }
 
 fn init_tracing_default() {
     let mut guard = LOGGER_INIT.lock();
-    if *guard { return; }
+    if *guard {
+        return;
+    }
     let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
-    fmt().with_env_filter(filter).with_target(true).compact().init();
+    fmt()
+        .with_env_filter(filter)
+        .with_target(true)
+        .compact()
+        .init();
     *guard = true;
 }
 

@@ -1,5 +1,5 @@
-use criterion::{criterion_group, criterion_main, Criterion};
 use config::load_from_str;
+use criterion::{criterion_group, criterion_main, Criterion};
 
 fn bench_config_load(c: &mut Criterion) {
     let cfg = r#"

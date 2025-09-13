@@ -3,7 +3,7 @@
 //! Backend: sysinfo (safe, portable). Swappable later for macOS libproc/C without API changes.
 
 use hashbrown::HashMap;
-use overflow_core::{AnyEvent, BaseEvent, ProcessInfo, TimestampMs, Event}; // 👈 Event added here
+use overflow_core::{AnyEvent, BaseEvent, Event, ProcessInfo, TimestampMs}; // 👈 Event added here
 use overflow_utils::unix_time_ms;
 use serde::{Deserialize, Serialize};
 use sysinfo::{ProcessRefreshKind, RefreshKind, System, Users};
@@ -125,7 +125,7 @@ impl ProcessMonitor {
             };
 
             let cpu_pct = p.cpu_usage(); // f32
-            // sysinfo::Process::memory() returns KiB (u64) — convert to MiB
+                                         // sysinfo::Process::memory() returns KiB (u64) — convert to MiB
             let mem_mb = (p.memory() as f32) / 1024.0;
 
             // sysinfo 0.30 no longer exposes thread list cross-platform; keep portable default.
@@ -168,7 +168,10 @@ impl ProcessMonitor {
 
         let elapsed = t0.elapsed().as_millis() as u64;
         if elapsed > self.cfg.soft_budget_ms {
-            warn!(elapsed_ms = elapsed, "process snapshot exceeded soft budget");
+            warn!(
+                elapsed_ms = elapsed,
+                "process snapshot exceeded soft budget"
+            );
         } else {
             debug!(elapsed_ms = elapsed, "process snapshot ok");
         }
@@ -247,8 +250,8 @@ impl ProcessMonitor {
 }
 
 /* ============================
-   Tests (unit-level)
-   ============================ */
+Tests (unit-level)
+============================ */
 
 #[cfg(test)]
 mod tests {
@@ -268,13 +271,19 @@ mod tests {
     #[test]
     #[serial]
     fn diff_detects_start_and_end() {
-        let mut mon = ProcessMonitor::new(ProcMonCfg { emit_deltas: true, soft_budget_ms: 500 }).unwrap();
+        let mut mon = ProcessMonitor::new(ProcMonCfg {
+            emit_deltas: true,
+            soft_budget_ms: 500,
+        })
+        .unwrap();
         let s1 = mon.capture().unwrap();
 
         // Spawn a short-lived child
         let mut child = std::process::Command::new("sh")
-            .arg("-c").arg("sleep 0.2")
-            .spawn().unwrap();
+            .arg("-c")
+            .arg("sleep 0.2")
+            .spawn()
+            .unwrap();
         let _ = child.wait().unwrap();
 
         let s2 = mon.capture().unwrap();

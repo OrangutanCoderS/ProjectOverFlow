@@ -1,5 +1,5 @@
+use overflow_core::{AnyEvent, CpuEvent, Event};
 use system::cpu_tracker::{CpuCfg, CpuTracker};
-use overflow_core::{Event, CpuEvent, AnyEvent};
 
 #[test]
 fn cpu_snapshot_direct_event() {
