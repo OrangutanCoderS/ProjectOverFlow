@@ -1,0 +1,31 @@
+[package]
+name = "watchdog"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[features]
+# Optional sinks: keep off by default so we don't affect other crates.
+telemetry = ["dep:telemetry_bridge", "serde", "serde_json"]
+logging   = ["dep:logs"]
+
+[dependencies]
+thiserror = "1"
+chrono = { version = "0.4", default-features = true }
+parking_lot = "0.12"
+serde = { version = "1", features = ["derive"], optional = true }
+serde_json = { version = "1", optional = true }
+
+# Optional, only when feature enabled
+telemetry_bridge = { path = "../telemetry_bridge", optional = true }
+logs = { path = "../logs", optional = true }
+
+once_cell = "1.21"
+
+[dev-dependencies]
+pretty_assertions = "1"
+criterion = "0.5"
+
+[[bench]]
+name = "watchdog_bench"
+harness = false

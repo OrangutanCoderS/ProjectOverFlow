@@ -1,0 +1,27 @@
+[package]
+name = "export_tools"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "CSV/JSON exporters with redaction and snapshot summaries"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "1"
+anyhow = "1"
+csv = "1"
+parking_lot = "0.12"
+
+[dev-dependencies]
+tempfile = "3"
+pretty_assertions = "1"
+criterion = "0.5"
+
+[lib]
+path = "src/lib.rs"
+
+[[bench]]
+name = "export_bench"
+harness = false
