@@ -1,0 +1,41 @@
+[package]
+name = "memory_patcher"
+version = "0.1.0"
+edition = "2021"
+description = "Safe, policy-checked memory scanning and patching for OverFlow (mock backend by default)."
+license = "MIT OR Apache-2.0"
+repository = ""
+
+[features]
+# Default: mock backend only (safe, no privileges required)
+default = ["mock"]
+# Future: enable real OS backends when ready
+mock = []
+macos = []
+linux = []
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+once_cell = "1.21"
+tracing = "0.1"
+sha2 = "0.10"
+base64 = "0.22"
+memchr = "2.7"
+parking_lot = "0.12"
+
+# NOTE: We do not depend on os_shim here; the real backends will later.
+# Keep this crate standalone for now.
+
+[dev-dependencies]
+criterion = "0.5"
+rand = "0.8"
+tempfile = "3.10"
+
+[lib]
+crate-type = ["rlib"]
+
+[[bench]]
+name = "memory_patch_bench"
+harness = false

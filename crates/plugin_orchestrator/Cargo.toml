@@ -1,0 +1,20 @@
+[package]
+name = "plugin_orchestrator"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+plugin_loader = { path = "../plugin_loader" }
+plugin_registry = { path = "../plugin_registry", optional = true }
+plugin_graph_builder = { path = "../plugin_graph_builder" }
+plugin_graph_runtime = { path = "../plugin_graph_runtime" }
+plugin_response_chain = { path = "../plugin_response_chain" }
+logical_branching = { path = "../logical_branching" }
+plugin_api = { path = "../plugin_api" }
+autonomous_runtime = { path = "../autonomous_runtime" }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+hashbrown = { workspace = true }
+log = { workspace = true }

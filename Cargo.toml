@@ -26,8 +26,51 @@ members = [
     "crates/export_tools",
     "crates/telemetry_bridge",
     "crates/watchdog", 
-    "crates/behavior_injector", "crates/os_shim",
-]
+    "crates/behavior_injector",
+    "crates/os_shim",
+    "crates/syscall_interceptor",
+    "crates/memory_patcher",
+    "crates/network_redirector",
+    "crates/fake_device_emulator",
+    "crates/process_spoofing",
+    "crates/action_kill",
+    "crates/action_suspend",
+    "crates/action_inject_env",
+    "crates/action_spawn_mirror",
+    "crates/action_throttle",
+    "crates/action_fake_output",
+    "crates/syscall_blocker",
+    "crates/trigger_policies",
+    "crates/trigger_thresholds",
+    "crates/autonomous_runtime",
+    "crates/context_graph",
+    "crates/policy_tree",
+    "crates/execution_node",
+    "crates/trace_timeline",
+    "crates/plugin_response_chain",
+    "crates/logical_branching",
+    "crates/plugin_graph_runtime",
+    "crates/plugin_graph_builder",
+    "crates/plugin_registry",
+    "crates/plugin_orchestrator",
+    "crates/socket_listener", 
+    "crates/peer_sync",
+    "crates/auth_layer",
+    "crates/telemetry_forwarder",
+    "crates/export_sanitizer",
+    "crates/graph_merger",
+    "crates/cross_platform_hooks",
+    "crates/memory_replay_engine",
+    "crates/policy_audit_log",
+    "crates/telemetry_pattern_miner",
+    "crates/graph_evolver",
+    "crates/pattern_cache",
+    "crates/dynamic_policy_updater",
+    "crates/policy_diff_viewer",
+    "crates/rollback_engine",
+
+    ]
+
 resolver = "2"
 
 [workspace.package]
@@ -62,3 +105,11 @@ chrono = { version = "0.4", features = ["serde"] }
 # dynamic loading / FFI
 libloading = "0.8"
 libc = "0.2"
+
+# missing deps for plugin_graph_builder & orchestrator
+hashbrown = "0.16"
+serde_yaml = "0.9"
+log = "0.4"
+
+rusqlite = "0.32"
+libsqlite3-sys = "0.30.1"

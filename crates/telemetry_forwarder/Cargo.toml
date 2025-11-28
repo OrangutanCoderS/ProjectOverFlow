@@ -1,0 +1,26 @@
+[package]
+name = "telemetry_forwarder"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "telemetry_forwarder"
+path = "src/lib.rs"
+
+[dependencies]
+tokio = { version = "1", features = ["net", "time", "rt-multi-thread", "sync"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+tracing = "0.1"
+chrono = { version = "0.4", features = ["serde"] }
+async-trait = "0.1"
+parking_lot = "0.12"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["async_tokio"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+
+[[bench]]
+name = "forward_bench"
+harness = false

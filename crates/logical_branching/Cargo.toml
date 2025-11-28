@@ -1,0 +1,19 @@
+[package]
+name = "logical_branching"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9"
+thiserror = "1"
+hashbrown = "0.15"
+plugin_response_chain = { path = "../plugin_response_chain" }
+
+[dev-dependencies]
+criterion = "0.5"
+hashbrown = "0.15"
+
+[[bench]]
+name = "logical_branching_bench"
+harness = false

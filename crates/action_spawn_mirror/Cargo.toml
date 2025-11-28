@@ -1,0 +1,17 @@
+[package]
+name = "action_spawn_mirror"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+log = "0.4"
+anyhow = "1.0"
+nix = "0.28"
+psutil = "3.3.0"
+
+[dev-dependencies]
+criterion = "0.5"

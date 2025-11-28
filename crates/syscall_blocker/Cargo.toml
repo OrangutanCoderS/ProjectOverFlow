@@ -1,0 +1,67 @@
+[package]
+name = "syscall_blocker"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "syscall_blocker"
+path = "src/lib.rs"
+crate-type = ["rlib"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "1.0"
+
+libc = "0.2.155"
+nix = { version = "0.28", features = ["process", "ptrace", "signal", "user"] }
+
+psutil = "3.3.0"
+
+#Benchmarks + Dev utilities
+criterion = { version = "0.5", optional = true }
+
+[dev-dependencies]
+criterion = "0.5"
+tempfile = "3.10"
+
+[features]
+mock = []
+default = []
+
+[profile.dev]
+opt-level = 1
+overflow-checks = true
+debug = true
+panic = "unwind"
+
+[profile.release]
+opt-level = 3
+lto = true
+panic = "abort"
+codegen-units = 1
+
+[profile.bench]
+opt-level = 3
+debug = false
+lto = true
+codegen-units = 1
+
+[profile.test]
+opt-level = 1
+debug = true
+overflow-checks = true
+panic = "unwind"
+
+[[bench]]
+name = "syscall_block_bench"
+harness = false
+path = "benches/syscall_block_bench.rs"
+
+[[test]]
+name = "unit"
+path = "tests/unit.rs"
+
+[package.metadata.docs.rs]
+all-features = true

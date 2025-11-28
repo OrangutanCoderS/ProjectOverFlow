@@ -1,0 +1,22 @@
+[package]
+name = "cross_platform_hooks"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "cross_platform_hooks"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9"
+thiserror = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+criterion = "0.5"
+tempfile = "3"
+
+[[bench]]
+name = "hooks_bench"
+harness = false

@@ -1,0 +1,22 @@
+[package]
+name = "fake_device_emulator"
+version = "0.1.0"
+edition = "2021"
+description = "Simulation-first fake device emulator (feature-gated OS shim later)."
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+parking_lot = "0.12"
+thiserror = "1.0"
+uuid = { version = "1.1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+log = "0.4"
+
+[dev-dependencies]
+tempfile = "3.5"
+criterion = "0.5"
+
+[features]
+default = []
+os_emulation = []   # placeholder for future platform-specific backend

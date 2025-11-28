@@ -142,8 +142,6 @@ struct NettopBackend;
 impl NettopBackend {
     fn available() -> bool {
         if cfg!(target_os = "macos") {
-            // Try to run a short-lived nettop command to see if present & invokable.
-            // We do not require root here; if it fails at runtime, we'll error and the caller continues.
             if Command::new("which").arg("nettop").output().map(|o| o.status.success()).unwrap_or(false) {
                 return true;
             }
@@ -151,48 +149,103 @@ impl NettopBackend {
         false
     }
 
-    fn parse_nettop(output: &str, limit: usize) -> Vec<NetworkConnectionInfo> {
-        // `nettop -P -L 1 -J bytes_in,bytes_out,interface,state,command` produces a table-ish view.
-        // Output varies by OS version; we'll lazily capture common fields using conservative regex windows.
-        // We keep the parser fault-tolerant: any non-matching line is ignored.
-        static RE: Lazy<Regex> = Lazy::new(|| {
-            // Example tolerant pattern (best-effort):
-            // <iface>  <state>  <process> <pid>  <local_ip>:<port>  <remote_ip>:<port>  in:<num> out:<num>
-            Regex::new(
-                r"(?P<iface>\S+)\s+(?P<state>[A-Z]+)\s+(?P<proc>.+?)\s+\((?P<pid>\d+)\)\s+(?P<lip>\d{1,3}(?:\.\d{1,3}){3}):(?P<lport>\d+)\s+(?P<rip>\d{1,3}(?:\.\d{1,3}){3}):(?P<rport>\d+).+?bytes_in[:=](?P<in>\d+).+?bytes_out[:=](?P<out>\d+)"
-            ).unwrap()
-        });
-
+    fn parse_csv(output: &str, limit: usize) -> Vec<NetworkConnectionInfo> {
         let mut out = Vec::with_capacity(256);
+
         for (i, line) in output.lines().enumerate() {
+            if i == 0 { continue; } // skip header
             if out.len() >= limit { break; }
-            if let Some(c) = RE.captures(line) {
-                let info = NetworkConnectionInfo {
-                    timestamp: utc_iso8601(),
-                    pid: c.name("pid").and_then(|m| m.as_str().parse::<i32>().ok()).unwrap_or_default(),
-                    process: c.name("proc").map(|m| m.as_str().trim().to_string()).unwrap_or_default(),
-                    user: String::from("unknown"),
-                    local_ip: c.name("lip").map(|m| m.as_str().to_string()).unwrap_or_default(),
-                    local_port: c.name("lport").and_then(|m| m.as_str().parse::<u16>().ok()).unwrap_or(0),
-                    remote_ip: c.name("rip").map(|m| m.as_str().to_string()).unwrap_or_default(),
-                    remote_port: c.name("rport").and_then(|m| m.as_str().parse::<u16>().ok()).unwrap_or(0),
-                    protocol: "TCP".to_string(), // nettop view is connection-centric (TCP focus)
-                    state: c.name("state").map(|m| m.as_str().to_string()).unwrap_or_else(|| "UNKNOWN".to_string()),
-                    bytes_sent: c.name("out").and_then(|m| m.as_str().parse().ok()),
-                    bytes_received: c.name("in").and_then(|m| m.as_str().parse().ok()),
-                    interface: c.name("iface").map(|m| m.as_str().to_string()),
-                    dns_query: None,
-                };
-                // soft validation to avoid junk
-                if info.pid > 0 && (info.local_port != 0 || info.remote_port != 0) {
-                    out.push(info);
+            let cols: Vec<&str> = line.split(',').collect();
+            if cols.len() < 6 { continue; }
+
+            // columns: time,conn,iface,state,bytes_in,bytes_out,...
+            let conn_field = cols[1];
+            let iface      = cols[2];
+            let state      = cols[3];
+            let bytes_in   = cols[4].parse::<u64>().ok();
+            let bytes_out  = cols.get(5).and_then(|v| v.parse::<u64>().ok());
+
+            // Protocol
+            let mut protocol = "UNKNOWN".to_string();
+            if conn_field.starts_with("tcp") { protocol = "TCP".to_string(); }
+            if conn_field.starts_with("udp") { protocol = "UDP".to_string(); }
+
+            // Parse IP/ports
+            let mut local_ip = String::new();
+            let mut local_port = 0u16;
+            let mut remote_ip = String::new();
+            let mut remote_port = 0u16;
+
+            if let Some((l, r)) = conn_field.split_once("<->") {
+                if let Some((ip, port)) = l.rsplit_once(':') {
+                    local_ip = ip.to_string();
+                    local_port = port.parse().unwrap_or(0);
                 }
-            } else {
-                // Non-matching lines are skipped, never crash the monitor
-                let _ = i; // keep clippy calm
+                if let Some((ip, port)) = r.rsplit_once(':') {
+                    remote_ip = ip.to_string();
+                    remote_port = port.parse().unwrap_or(0);
+                }
             }
+
+            out.push(NetworkConnectionInfo {
+                timestamp: utc_iso8601(),
+                pid: 0, // to be enriched later
+                process: conn_field.to_string(),
+                user: "unknown".to_string(),
+                local_ip,
+                local_port,
+                remote_ip,
+                remote_port,
+                protocol,
+                state: state.to_string(),
+                bytes_sent: bytes_out,
+                bytes_received: bytes_in,
+                interface: Some(iface.to_string()),
+                dns_query: None,
+            });
         }
         out
+    }
+
+    fn enrich_with_lsof(conns: Vec<NetworkConnectionInfo>, subproc_timeout: Duration)
+        -> Vec<NetworkConnectionInfo>
+    {
+        use std::collections::HashMap;
+        let mut map: HashMap<(String, u16, String, u16, String), (i32, String, String, String)> = HashMap::new();
+
+        if let Ok(out) = run_command_with_timeout("lsof", ["-i", "-nP"], subproc_timeout) {
+            let text = String::from_utf8_lossy(&out.stdout);
+            for line in text.lines().skip(1) {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() < 9 { continue; }
+
+                let pid = parts[1].parse::<i32>().unwrap_or(0);
+                let user = parts[2].to_string();
+                let proc_name = parts[0].to_string();
+                let name_field = parts[8..].join(" ");
+
+                if let Some((proto, lip, lport, rip, rport, state)) =
+                    LsofBackend::parse_name_field(&name_field)
+                {
+                    map.insert(
+                        (lip.clone(), lport, rip.clone(), rport, proto.clone()),
+                        (pid, proc_name, user, state),
+                    );
+                }
+            }
+        }
+
+        conns.into_iter().map(|mut c| {
+            if let Some((pid, proc, user, state)) =
+                map.get(&(c.local_ip.clone(), c.local_port, c.remote_ip.clone(), c.remote_port, c.protocol.clone()))
+            {
+                c.pid = *pid;
+                c.process = proc.clone();
+                c.user = user.clone();
+                c.state = state.clone();
+            }
+            c
+        }).collect()
     }
 }
 
@@ -200,14 +253,21 @@ impl Backend for NettopBackend {
     fn name(&self) -> &'static str { "nettop" }
 
     fn sample(&self, limit: usize, subproc_timeout: Duration) -> Result<Vec<NetworkConnectionInfo>> {
-        // We keep the command minimal to avoid TTY modes and pagination issues.
-        // -P (per-process), -L 1 (one sample), -J (columns), -t (no curses) varies by version; use tolerant parsing.
-        let cmd = ["-P", "-L", "1", "-J", "bytes_in,bytes_out,interface,state,command"];
-        let out: ProcOutput = run_command_with_timeout("nettop", cmd, subproc_timeout)
-            .context("failed to run nettop")?;
-        Ok(Self::parse_nettop(&String::from_utf8_lossy(&out.stdout), limit))    }
-}
+        // CSV mode (macOS 26+), force raw IPs with -n
+        let csv_out: ProcOutput = run_command_with_timeout(
+            "nettop",
+            ["-n", "-L", "1"],   // 👈 added -n here
+            subproc_timeout,
+        ).context("failed to run nettop -n -L 1")?;
 
+        let parsed_csv = NettopBackend::parse_csv(&String::from_utf8_lossy(&csv_out.stdout), limit);
+
+        // Enrich with lsof (for PID, process name, state, user)
+        let enriched = NettopBackend::enrich_with_lsof(parsed_csv, subproc_timeout);
+
+        Ok(enriched)
+    }
+}
 /// Backend 2 — `lsof -i -nP` parser (portable across macOS; user-level).
 struct LsofBackend {
     re_line: Regex,
@@ -335,4 +395,7 @@ pub enum NetmonError {
     BackendUnavailable,
     #[error("parse error: {0}")]
     Parse(String),
+}
+pub fn backend_name() -> &'static str {
+    BACKEND.name()
 }

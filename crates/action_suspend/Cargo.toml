@@ -1,0 +1,21 @@
+[package]
+name = "action_suspend"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+nix = "0.28"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = "0.4"
+thiserror = "1.0"
+anyhow = "1.0"
+log = "0.4"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "suspend_bench"
+harness = false

@@ -1,0 +1,19 @@
+[package]
+name = "plugin_registry"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+hashbrown = "0.16"
+thiserror = "1"
+
+# Plumbed in for future integration; safe to be unused for now.
+plugin_api = { path = "../plugin_api" }
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "registry_bench"
+harness = false

@@ -9,6 +9,7 @@ thiserror = "1"
 walkdir = "2"
 tracing = "0.1"
 overflow-core = { path = "../core" }
+dirs = "5"
 
 [dev-dependencies]
 criterion = "0.5"

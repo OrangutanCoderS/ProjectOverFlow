@@ -1,0 +1,26 @@
+[package]
+name = "context_graph"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+hashbrown = { version = "0.15", features = ["serde"] }
+indexmap = { version = "2", features = ["serde"] }
+thiserror = "1.0"
+
+# if needed for benches later
+criterion = { version = "0.5", optional = true }
+
+[dev-dependencies]
+criterion = "0.5"
+
+[features]
+default = []
+bench = ["criterion"]
+
+[[bench]]
+name = "context_graph_bench"
+harness = false
