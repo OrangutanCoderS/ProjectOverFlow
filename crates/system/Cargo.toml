@@ -4,13 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1"
 thiserror = "1"
 serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 sysinfo = { version = "0.30", default-features = false, features = ["multithread"] }
+
 overflow-core = { path = "../core" }
 overflow-utils = { path = "../utils" }
+
 tracing = "0.1"
-serde_json = "1"
 regex = "1"
 
 [dev-dependencies]
@@ -19,5 +22,9 @@ criterion = "0.5"
 
 [features]
 default = []
-# When you later add AnyEvent::SystemStatSnapshot to overflow-core, we can enable this:
 core-integration = []
+
+# 🔥 IMPORTANT: Declare the main binary (system)
+[[bin]]
+name = "system"
+path = "src/main.rs"
