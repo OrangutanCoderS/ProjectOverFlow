@@ -152,3 +152,7 @@ pub mod battery_monitor;
 pub use battery_monitor::{BatteryCfg, BatteryError, BatteryMonitor};
 
 pub mod thermal_logger;
+
+pub mod subsystem;
+
+pub use subsystem::SystemSubsystem;

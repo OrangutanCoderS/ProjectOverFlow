@@ -250,3 +250,11 @@ pub fn parse_powermetrics_thermal(s: &str) -> ThermalSnapshot {
 
     snap
 }
+
+impl ThermalSnapshot {
+    pub fn is_meaningful(&self) -> bool {
+        self.cpu_temp_c.is_some() ||
+        self.gpu_temp_c.is_some() ||
+        self.soc_temp_c.is_some()
+    }
+}

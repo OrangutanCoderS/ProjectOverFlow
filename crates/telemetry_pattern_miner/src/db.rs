@@ -216,25 +216,18 @@ fn merge_pattern_stats(
     let count = a.count + b.count;
 
     let avg_entropy = match (a.avg_entropy, b.avg_entropy) {
-        (Some(e1), Some(e2)) if count > 0 => {
-            let s1 = e1 * (a.count as f64);
-            let s2 = e2 * (b.count as f64);
-            Some((s1 + s2) / (count as f64))
-        }
-        (Some(e), None) | (None, Some(e)) => Some(e),
-        (None, None) => None,
-    };
+    (Some(x), None) => Some(x),
+    (None, Some(y)) => Some(y),
+    (Some(x), Some(y)) => Some((x + y) / 2.0),
+    (None, None) => None,
+};
 
     let failure_rate = match (a.failure_rate, b.failure_rate) {
-        (Some(f1), Some(f2)) if count > 0 => {
-            // approximate failures, then recompute ratio
-            let fail1 = f1 * (a.count as f64);
-            let fail2 = f2 * (b.count as f64);
-            Some((fail1 + fail2) / (count as f64))
-        }
-        (Some(f), None) | (None, Some(f)) => Some(f),
-        (None, None) => None,
-    };
+    (Some(x), None) => Some(x),
+    (None, Some(y)) => Some(y),
+    (Some(x), Some(y)) => Some((x + y) / 2.0),
+    (None, None) => None,
+};
 
     Ok(PatternStats {
         fingerprint: a.fingerprint.clone(),
