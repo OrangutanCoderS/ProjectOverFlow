@@ -536,3 +536,4 @@ impl Event for ThermalEvent {
         Ok(())
     }
 }
+
