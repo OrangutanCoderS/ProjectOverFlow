@@ -9,6 +9,7 @@ use sysinfo::{CpuRefreshKind, RefreshKind, System};
 use thiserror::Error;
 use tracing::{debug, warn};
 
+
 #[derive(Debug, Error)]
 pub enum CpuError {
     #[error("system init: {0}")]

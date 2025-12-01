@@ -1,55 +1,58 @@
 use netmon::{NetworkConfig, spawn_polling};
-use std::{env, time::Duration};
+use serde::Serialize;
+use std::{env, time::{Duration, SystemTime, UNIX_EPOCH}};
 
-fn format_connection(conn: &netmon::NetworkConnectionInfo) -> String {
-    format!(
-        "{:<6} {:<15} {:<20} {:<5} {:<22} -> {:<22} {:<12} {:>8}/{:<8} {:<5}",
-        conn.pid,
-        conn.user,
-        conn.process,
-        conn.protocol,
-        format!("{}:{}", conn.local_ip, conn.local_port),
-        format!("{}:{}", conn.remote_ip, conn.remote_port),
-        conn.state.to_uppercase(),
-        conn.bytes_received.unwrap_or(0),
-        conn.bytes_sent.unwrap_or(0),
-        conn.interface.clone().unwrap_or_else(|| "-".to_string())
-    )
+#[derive(Serialize)]
+struct NetworkEventEnvelope<'a> {
+    event_type: &'static str,
+    ts_ms: u128,
+    data: &'a netmon::NetworkConnectionInfo,
+}
+
+fn now_ms() -> u128 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis()
 }
 
 fn main() {
-    // interval (ms) can be passed as arg, else default = 1000
     let args: Vec<String> = env::args().collect();
-    let interval = if args.len() > 1 {
-        args[1].parse::<u64>().unwrap_or(1000)
-    } else {
-        1000
-    };
+    let interval = args.get(1)
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(1000);
 
     let cfg = NetworkConfig {
         interval_ms: interval,
         ..Default::default()
     };
 
-    println!("=== ShadowTrace Network Monitor ===");
-    println!("Backend in use: {}", netmon::backend_name());
-
-    // Print header once
-    println!(
-        "{:<6} {:<15} {:<20} {:<5} {:<22} -> {:<22} {:<12} {:>8}/{:<8} {:<5}",
-        "PID", "USER", "PROCESS", "PROTO", "LOCAL", "REMOTE", "STATE", "IN", "OUT", "IFACE"
-    );
-    println!("{}", "-".repeat(120));
+    // backend init message (optional)
+    eprintln!("ShadowTrace Network Monitor backend starting…");
+    eprintln!("Backend in use: {}", netmon::backend_name());
 
     let rx = spawn_polling(cfg);
 
     loop {
         match rx.recv_timeout(Duration::from_secs(5)) {
             Ok(conn) => {
-                println!("{}", format_connection(&conn));
+                let evt = NetworkEventEnvelope {
+                    event_type: "network",
+                    ts_ms: now_ms(),
+                    data: &conn,
+                };
+                println!("{}", serde_json::to_string(&evt).unwrap());
             }
             Err(_) => {
-                println!("(No connections seen in last 5s)");
+                // Emit heartbeat to trigger UI "no data" state
+                let evt = serde_json::json!({
+                    "event_type": "network",
+                    "ts_ms": now_ms(),
+                    "data": {
+                        "heartbeat": true
+                    }
+                });
+                println!("{}", evt.to_string());
             }
         }
     }

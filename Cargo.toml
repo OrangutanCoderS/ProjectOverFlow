@@ -68,8 +68,7 @@ members = [
     "crates/dynamic_policy_updater",
     "crates/policy_diff_viewer",
     "crates/rollback_engine",
-
-    ]
+]
 
 resolver = "2"
 
