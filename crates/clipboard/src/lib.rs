@@ -1,9 +1,3 @@
-/*!
- Module 14 — Clipboard Watcher (clipboard)
- Goal: Poll clipboard to detect updates, compute hash + entropy, classify content type,
- and emit structured events without modifying existing crates.
-*/
-
 use anyhow::{anyhow, Context, Result};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
@@ -27,6 +21,7 @@ pub struct ClipboardEventInfo {
     pub data_type: String,     // "text" | "binary"
     pub length: usize,         // bytes length
     pub source: String,        // "unknown" (Phase I)
+    pub content: String,       // Actual clipboard content (if logging plaintext)
 }
 
 impl ClipboardEventInfo {
@@ -61,7 +56,7 @@ impl Default for ClipboardConfig {
     fn default() -> Self {
         Self {
             poll_interval_ms: 1000,
-            log_plaintext: false,
+            log_plaintext: true, // Default to true to log clipboard content
             entropy_alert_threshold: 6.5,
             subprocess_timeout_ms: 1500,
             max_capture_bytes: 1024 * 1024, // 1 MiB cap
@@ -78,15 +73,26 @@ pub fn poll_clipboard(cfg: &ClipboardConfig, last_hash: &str) -> Result<Option<C
     } else {
         &data[..]
     };
+
     // Detect type by UTF-8 validation
     let data_type = if std::str::from_utf8(capped).is_ok() { "text" } else { "binary" }.to_string();
 
     let hash = sha256_hex(capped);
+    
+    // Only register a new event if the clipboard content has changed
     if hash == last_hash {
-        return Ok(None); // unchanged
+        return Ok(None); // unchanged content
     }
 
+    // Update the last_hash after detecting a change
     let entropy = calculate_entropy(capped);
+    let content = if cfg.log_plaintext {
+        // If plaintext logging is enabled, convert content to a string
+        String::from_utf8_lossy(capped).to_string() // Safely convert to string
+    } else {
+        "".to_string() // If not logging plaintext, leave it empty
+    };
+
     let info = ClipboardEventInfo {
         timestamp: utc_iso8601(),
         event: "clipboard_update".to_string(),
@@ -95,10 +101,15 @@ pub fn poll_clipboard(cfg: &ClipboardConfig, last_hash: &str) -> Result<Option<C
         data_type,
         length: capped.len(),
         source: "unknown".to_string(),
+        content, // Save actual content if logging plaintext
     };
+
     info.validate()?;
-    // Bench-friendly: log elapsed if needed
+
+    // Log the elapsed time if needed (for debugging)
     let _elapsed = now.elapsed();
+
+    // Return the updated event
     Ok(Some(info))
 }
 
@@ -107,17 +118,17 @@ pub fn spawn_clipboard_watcher(cfg: ClipboardConfig) -> Receiver<ClipboardEventI
     let (tx, rx): (Sender<ClipboardEventInfo>, Receiver<ClipboardEventInfo>) = mpsc::channel();
     thread::spawn(move || {
         let mut last_hash = String::new();
-        let interval = Duration::from_millis(cfg.poll_interval_ms.max(100));
+        let interval = Duration::from_millis(cfg.poll_interval_ms.max(100)); // Shorter polling interval
         loop {
             match poll_clipboard(&cfg, &last_hash) {
                 Ok(Some(ev)) => {
-                    last_hash = ev.content_hash.clone();
-                    let _ = tx.send(ev);
+                    last_hash = ev.content_hash.clone(); // Update last_hash after processing the event
+                    let _ = tx.send(ev);  // Send event if content has changed
                 }
-                Ok(None) => { /* no change */ }
-                Err(_) => { /* fail closed; continue loop */ }
+                Ok(None) => { /* No change detected */ }
+                Err(_) => { /* Fail gracefully, continue polling */ }
             }
-            thread::sleep(interval);
+            thread::sleep(interval); // Sleep between polling
         }
     });
     rx

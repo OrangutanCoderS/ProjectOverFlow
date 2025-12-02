@@ -8,6 +8,8 @@ regex = "1"
 thiserror = "1"
 walkdir = "2"
 tracing = "0.1"
+tracing-subscriber = "0.3"
+chrono = "0.4"
 overflow-core = { path = "../core" }
 dirs = "5"
 
@@ -17,4 +19,4 @@ tempfile = "3"
 
 [features]
 default = []
-bench = []  
+bench = []

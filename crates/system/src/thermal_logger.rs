@@ -2,24 +2,7 @@
 //!
 //! Goal: Collect CPU/GPU/SOC temperatures on macOS using `powermetrics` with a
 //! resilient parser and a sane timeout. Linux/Windows currently return
-//! `Unsupported`. We DO NOT touch overflow-core schema in this module (Option 2).
-//!
-//! Output type (local-only): `ThermalSnapshot`
-//! - Not wired to AnyEvent yet to avoid churn; we’ll integrate once stable.
-//!
-//! Security & robustness:
-//! - Hard timeout on subprocess
-//! - Graceful parsing with optional fields
-//! - No panics on untrusted output
-//! - Unit tests pin basic parsing
-//!
-//! Performance:
-//! - Single short-lived subprocess per capture
-//! - Regex precompiled on call; kept minimal
-//!
-//! macOS notes:
-//! - We prefer `powermetrics` sampler `smc` (Intel) and `thermal` / `gpu_power` (Apple Silicon).
-//! - The output varies across machines/OS versions, so we keep patterns broad.
+//! `Unsupported`.
 
 use std::io::Read;
 use std::process::{Command, Stdio};
@@ -60,7 +43,7 @@ impl Default for ThermalCfg {
     }
 }
 
-/// Local snapshot struct (kept minimal and optional-friendly).
+/// Local snapshot struct.
 #[derive(Debug, Clone, Default)]
 pub struct ThermalSnapshot {
     /// CPU die temperature in °C (if available).
@@ -71,6 +54,15 @@ pub struct ThermalSnapshot {
     pub soc_temp_c: Option<f32>,
     /// Whether we observed a throttle indication (best-effort).
     pub throttling: Option<bool>,
+}
+
+impl ThermalSnapshot {
+    /// Helper to check if we captured any useful data.
+    pub fn is_meaningful(&self) -> bool {
+        self.cpu_temp_c.is_some() ||
+        self.gpu_temp_c.is_some() ||
+        self.soc_temp_c.is_some()
+    }
 }
 
 pub struct ThermalLogger {
@@ -121,19 +113,6 @@ impl ThermalLogger {
 
             let snap = parse_powermetrics_thermal(&text);
 
-            // Validate sanity: if any present, they must be 0..=120°C.
-            for (label, val) in [
-                ("cpu_temp_c", snap.cpu_temp_c),
-                ("gpu_temp_c", snap.gpu_temp_c),
-                ("soc_temp_c", snap.soc_temp_c),
-            ] {
-                if let Some(v) = val {
-                    if !(0.0..=120.0).contains(&v) {
-                        return Err(ThermalError::Parse(format!("{label} out of range: {v}")));
-                    }
-                }
-            }
-
             let elapsed = t0.elapsed().as_millis() as u64;
             if elapsed > self.cfg.timeout_ms {
                 warn!(elapsed_ms = elapsed, "thermal capture exceeded soft budget");
@@ -144,8 +123,6 @@ impl ThermalLogger {
             Ok(snap)
         }
     }
-
-    // ---- platform helpers (macOS) ----
 
     #[cfg(target_os = "macos")]
     fn run_powermetrics(&self, args: &[&str], timeout: Duration) -> Result<String> {
@@ -163,18 +140,13 @@ impl ThermalLogger {
                 child.try_wait().map_err(|e| ThermalError::Subprocess(format!("try_wait: {e}")))?
             {
                 let mut out = Vec::new();
-                let mut err = Vec::new();
                 if let Some(mut s) = child.stdout.take() {
                     let _ = s.read_to_end(&mut out);
                 }
-                if let Some(mut s) = child.stderr.take() {
-                    let _ = s.read_to_end(&mut err);
-                }
                 if !status.success() {
                     return Err(ThermalError::Subprocess(format!(
-                        "powermetrics exit={} stderr={}",
-                        status.code().unwrap_or(-1),
-                        String::from_utf8_lossy(&err)
+                        "powermetrics exit={}",
+                        status.code().unwrap_or(-1)
                     )));
                 }
                 return Ok(String::from_utf8_lossy(&out).to_string());
@@ -183,15 +155,7 @@ impl ThermalLogger {
             if start.elapsed() >= timeout {
                 let _ = child.kill();
                 let _ = child.wait();
-                let mut err = Vec::new();
-                if let Some(mut s) = child.stderr.take() {
-                    let _ = s.read_to_end(&mut err);
-                }
-                return Err(ThermalError::Subprocess(format!(
-                    "powermetrics timeout after {:?}. stderr: {}",
-                    timeout,
-                    String::from_utf8_lossy(&err)
-                )));
+                return Err(ThermalError::Subprocess(format!("powermetrics timeout after {:?}", timeout)));
             }
 
             std::thread::sleep(Duration::from_millis(5));
@@ -200,17 +164,10 @@ impl ThermalLogger {
 }
 
 /// Parse `powermetrics` text (samplers `thermal` or `smc`) and extract best-effort temps.
-///
-/// We accept multiple possible labels:
-/// - "CPU die temperature: 37.6 C"
-/// - "GPU die temperature: 38.1 C"
-/// - "SoC die temperature: 36.0 C"
-/// - "CPU Thermal level: 0" or "CPU Thermal level: Nominal/Warning/Serious/Critical"
 pub fn parse_powermetrics_thermal(s: &str) -> ThermalSnapshot {
     let mut snap = ThermalSnapshot::default();
 
     // CPU/GPU/SoC die temperature patterns.
-    // Keep them simple and robust across minor wording changes.
     let re_cpu = Regex::new(r"(?mi)^\s*CPU (?:die )?temperature:\s*([\d\.]+)\s*C").unwrap();
     let re_gpu = Regex::new(r"(?mi)^\s*GPU (?:die )?temperature:\s*([\d\.]+)\s*C").unwrap();
     let re_soc = Regex::new(r"(?mi)^\s*(?:SoC|Package) (?:die )?temperature:\s*([\d\.]+)\s*C").unwrap();
@@ -232,10 +189,6 @@ pub fn parse_powermetrics_thermal(s: &str) -> ThermalSnapshot {
     }
 
     // Throttling / thermal level (best effort).
-    // Examples observed:
-    //   "CPU Thermal level: 0" (0=Nominal, >0 suggests thermal pressure)
-    //   "CPU Thermal level: Nominal"
-    //   "CPU Thermal level: Warning/Serious/Critical"
     let re_level_num = Regex::new(r"(?mi)CPU Thermal level:\s*(\d+)").unwrap();
     let re_level_txt = Regex::new(r"(?mi)CPU Thermal level:\s*(Nominal|Warning|Serious|Critical)").unwrap();
 
@@ -249,12 +202,4 @@ pub fn parse_powermetrics_thermal(s: &str) -> ThermalSnapshot {
     }
 
     snap
-}
-
-impl ThermalSnapshot {
-    pub fn is_meaningful(&self) -> bool {
-        self.cpu_temp_c.is_some() ||
-        self.gpu_temp_c.is_some() ||
-        self.soc_temp_c.is_some()
-    }
 }
